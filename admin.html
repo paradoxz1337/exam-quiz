@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0C0E11">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<title>Админка · Учёт прибыли</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{
+  color-scheme:dark;
+  --font:-apple-system,BlinkMacSystemFont,'SF Pro Text',system-ui,'Segoe UI',Roboto,sans-serif;
+  --num:ui-rounded,'SF Pro Rounded',-apple-system,BlinkMacSystemFont,system-ui,'Segoe UI',Roboto,sans-serif;
+  --ac:200,245,66; --ac-ink:#10130A; --volt:rgb(var(--ac)); --volt-soft:rgba(var(--ac),.13);
+  --bg:#0C0E11; --card:rgba(255,255,255,.045); --card2:rgba(255,255,255,.085); --line:#272C35;
+  --ink:#EEF1F5; --dim:#8A93A1; --faint:#5A6270;
+  --neg:#FF6161; --neg-soft:rgba(255,97,97,.13); --amber:#FFB454; --amber-soft:rgba(255,180,84,.12);
+  --blue:#5AC8F5; --blue-soft:rgba(90,200,245,.14);
+  --r:20px; --r-sm:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.4 var(--font);min-height:100dvh;-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+.n{font-family:var(--num);font-variant-numeric:tabular-nums}
+.hidden{display:none!important}
+#app{max-width:820px;margin:0 auto;padding:14px 16px calc(32px + env(safe-area-inset-bottom))}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:4px 0 14px}
+.eyebrow{font-size:10px;letter-spacing:.18em;color:var(--dim);font-weight:600;text-transform:uppercase}
+h1{font-size:22px;margin:2px 0 0;letter-spacing:-.01em}
+h2{font-size:20px;margin:0}
+.icon-btn{width:40px;height:40px;border-radius:12px;border:0;background:var(--card2);display:grid;place-items:center;cursor:pointer;font-size:18px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+@media (max-width:640px){.kpis{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:12px;min-width:0}
+.kpi .k{font-size:11px;color:var(--dim)}
+.kpi .v{font-size:21px;font-weight:700;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi .d{font-size:11.5px;color:var(--dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.hero{grid-column:span 2;background:linear-gradient(135deg,rgba(var(--ac),.16),rgba(90,200,245,.06));border-color:rgba(var(--ac),.28)}
+.kpi.hero .v{font-size:28px;color:var(--volt)}
+.pos{color:var(--volt)} .neg{color:var(--neg)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;margin:10px 0}
+.card h3{font-size:13px;color:var(--dim);font-weight:600;margin:0 0 8px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:110px;padding-top:16px}
+.bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;min-width:0}
+.bar .c{width:100%;max-width:22px;border-radius:5px 5px 2px 2px;background:var(--volt);min-height:2px}
+.bar .c.z{background:var(--line)} .bar .c.m{background:var(--neg)}
+.bar .t{font-size:9.5px;color:var(--dim);margin-bottom:3px;white-space:nowrap}
+.bar .day{font-size:9.5px;color:var(--faint);margin-top:4px;height:12px}
+.tabs{display:flex;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:3px;margin:14px 0 10px}
+.tab{flex:1;border:0;background:none;color:var(--dim);font-weight:600;padding:9px;border-radius:11px;cursor:pointer}
+.tab.on{background:var(--card2);color:var(--ink)}
+.tools{display:flex;gap:8px;margin-bottom:8px}
+.tools input{flex:1;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;outline:none}
+.tools input:focus{border-color:var(--volt)}
+.seg{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 8px}
+.chip{border:1px solid var(--line);background:var(--card);color:var(--dim);border-radius:999px;padding:6px 12px;font-size:13px;cursor:pointer}
+.chip.on{border-color:var(--volt);color:var(--ink)}
+.chip b{margin-left:4px;font-weight:600}
+.sort{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 10px;color:var(--ink)}
+.list{display:flex;flex-direction:column;gap:6px}
+.row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;cursor:pointer;min-width:0}
+.row:active{background:var(--card2)}
+.ava{width:40px;height:40px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:700;color:var(--ac-ink);font-size:16px}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row.deal .s{white-space:normal}
+.row .s{font-size:12.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .side{text-align:right;flex:none}
+.row .side .big{font-weight:700}
+.row .side .small{font-size:11.5px;color:var(--dim)}
+.pill{display:inline-block;font-size:11px;font-weight:600;border-radius:999px;padding:2px 8px}
+.pill.sold{background:var(--volt-soft);color:var(--volt)} .pill.progress{background:var(--amber-soft);color:var(--amber)}
+.pill.new{background:var(--blue-soft);color:var(--blue)}
+.empty{color:var(--dim);text-align:center;padding:26px 8px}
+.state{text-align:center;padding:60px 12px;color:var(--dim)}
+.state h2{color:var(--ink);margin-bottom:8px}
+.spinner{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--volt);animation:sp 0.8s linear infinite;margin:0 auto 14px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.back{border:0;background:none;color:var(--volt);font-weight:600;padding:6px 0;cursor:pointer;font-size:15px}
+.uhead{display:flex;gap:14px;align-items:center;margin:6px 0 12px}
+.uhead .ava{width:56px;height:56px;font-size:22px}
+.link{color:var(--blue);text-decoration:none;cursor:pointer;background:none;border:0;padding:0}
+.meta{font-size:12.5px;color:var(--dim);margin-top:2px}
+.foot{font-size:11.5px;color:var(--faint);text-align:center;margin-top:18px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="loading" class="state"><div class="spinner"></div>Загружаю данные…</div>
+  <div id="error" class="state hidden"><h2 id="errTitle">Нет доступа</h2><div id="errText"></div></div>
+
+  <div id="main" class="hidden">
+    <section id="home">
+      <header>
+        <div><div class="eyebrow">Учёт прибыли</div><h1>Админка</h1></div>
+        <button class="icon-btn" id="refresh" type="button" aria-label="Обновить">↻</button>
+      </header>
+      <div class="kpis">
+        <div class="kpi hero"><div class="k">Прибыль всех пользователей</div><div class="v n" id="kProfit">—</div><div class="d" id="kProfitD">—</div></div>
+        <div class="kpi"><div class="k">Пользователей</div><div class="v n" id="kUsers">—</div><div class="d" id="kUsersD">—</div></div>
+        <div class="kpi"><div class="k">Активны</div><div class="v n" id="kActive">—</div><div class="d" id="kActiveD">—</div></div>
+        <div class="kpi"><div class="k">Сделок</div><div class="v n" id="kDeals">—</div><div class="d" id="kDealsD">—</div></div>
+        <div class="kpi"><div class="k">Оборот (продажи)</div><div class="v n" id="kRevenue">—</div><div class="d" id="kRevenueD">—</div></div>
+        <div class="kpi"><div class="k">Заморожено</div><div class="v n" id="kFrozen">—</div><div class="d">вложено в непроданное</div></div>
+        <div class="kpi"><div class="k">Средняя маржа</div><div class="v n" id="kMargin">—</div><div class="d" id="kMarginD">—</div></div>
+      </div>
+      <div class="card"><h3>Прибыль по дням продажи, 14 дней</h3><div class="bars" id="chart"></div></div>
+
+      <div class="tabs">
+        <button class="tab on" data-tab="users" type="button">Пользователи</button>
+        <button class="tab" data-tab="deals" type="button">Сделки</button>
+      </div>
+
+      <div id="pane-users">
+        <div class="tools">
+          <input id="uq" type="search" placeholder="Имя, @username или id" autocomplete="off">
+          <select id="usort" class="sort" aria-label="Сортировка">
+            <option value="seen">Активность</option>
+            <option value="profit">Прибыль</option>
+            <option value="deals">Сделки</option>
+            <option value="new">Новые</option>
+          </select>
+        </div>
+        <div class="list" id="users"></div>
+      </div>
+
+      <div id="pane-deals" class="hidden">
+        <div class="tools"><input id="dq" type="search" placeholder="Название сделки или пользователь" autocomplete="off"></div>
+        <div class="seg" id="dseg"></div>
+        <div class="list" id="deals"></div>
+        <div class="empty hidden" id="dmore"></div>
+      </div>
+      <div class="foot" id="updated"></div>
+    </section>
+
+    <section id="user" class="hidden">
+      <button class="back" id="back" type="button">‹ Все пользователи</button>
+      <div class="uhead">
+        <div class="ava" id="uAva"></div>
+        <div style="min-width:0">
+          <h2 id="uName"></h2>
+          <div class="meta" id="uMeta"></div>
+        </div>
+      </div>
+      <div class="kpis" id="uKpis"></div>
+      <div class="card"><h3>Прибыль по дням продажи, 14 дней</h3><div class="bars" id="uChart"></div></div>
+      <div class="seg" id="useg"></div>
+      <div class="list" id="uDeals"></div>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function () {
+  const SYNC_URL = "https://fdnfkcwnzgowwaiwxyue.supabase.co/functions/v1/sync";
+  const $ = (id) => document.getElementById(id);
+  const tg = window.Telegram && window.Telegram.WebApp;
+  const state = { data: null, tab: "users", uq: "", usort: "seen", dq: "", dstatus: "all", user: null, ustatus: "all" };
+
+  if (tg) {
+    try { tg.ready(); tg.expand(); if (tg.setHeaderColor) tg.setHeaderColor("#0C0E11"); if (tg.setBackgroundColor) tg.setBackgroundColor("#0C0E11"); } catch (e) { /* old client */ }
+  }
+
+  // --- helpers (all user data goes in via textContent) ---------------------------------------------
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = String(text); return n; }
+  function clear(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+  const fmt = (v) => Math.round(Number(v) || 0).toLocaleString("ru-RU");
+  const rub = (v) => fmt(v) + " ₽";
+  const signed = (v) => (v > 0 ? "+" : v < 0 ? "−" : "") + fmt(Math.abs(v)) + " ₽";
+  function compact(v) {
+    const a = Math.abs(v), s = v < 0 ? "−" : "";
+    if (a >= 1e6) return s + (a / 1e6).toFixed(a >= 1e7 ? 0 : 1).replace(".0", "") + "м";
+    if (a >= 1e3) return s + Math.round(a / 1e3) + "к";
+    return s + Math.round(a);
+  }
+  function plural(n, a, b, c) { const m = n % 10, h = n % 100; return n + " " + (m === 1 && h !== 11 ? a : m >= 2 && m <= 4 && (h < 12 || h > 14) ? b : c); }
+  function ago(iso) {
+    if (!iso) return null;
+    const s = (Date.now() - new Date(iso).getTime()) / 1000;
+    if (s < 120) return "только что";
+    if (s < 3600) return Math.floor(s / 60) + " мин назад";
+    if (s < 86400) return Math.floor(s / 3600) + " ч назад";
+    if (s < 86400 * 2) return "вчера";
+    if (s < 86400 * 30) return Math.floor(s / 86400) + " дн назад";
+    return new Date(iso).toLocaleDateString("ru-RU");
+  }
+  const dmy = (iso) => { if (!iso) return ""; const p = iso.split("-"); return p.length === 3 ? p[2] + "." + p[1] + "." + p[0].slice(2) : iso; };
+  const COLORS = ["#C8F542", "#5AC8F5", "#FFB454", "#FF7A45", "#B48CFF", "#4ADE80", "#F472B6"];
+  function who(u) { const n = [u.first_name, u.last_name].filter(Boolean).join(" "); return n || (u.username ? "@" + u.username : "id " + u.user_id); }
+  function ava(u, node) {
+    const name = [u.first_name, u.last_name].filter(Boolean).join(" ") || u.username || "";
+    node.textContent = (name[0] || "#").toUpperCase();
+    node.style.background = COLORS[Math.abs(Number(String(u.user_id).slice(-6))) % COLORS.length];
+    return node;
+  }
+  function seen(u) { return u.last_seen || u.last_deal_at; }
+  const haptic = () => { try { tg && tg.HapticFeedback && tg.HapticFeedback.selectionChanged(); } catch (e) { /* ignore */ } };
+
+  function showState(title, text) {
+    $("loading").classList.add("hidden"); $("main").classList.add("hidden");
+    $("error").classList.remove("hidden"); $("errTitle").textContent = title; $("errText").textContent = text;
+  }
+
+  // --- data ------------------------------------------------------------------------------------------
+  async function load(silent) {
+    if (!tg || !tg.initData) {
+      showState("Откройте через бота", "Админка работает только внутри Telegram: напишите боту /admin и нажмите «Админка учёта».");
+      return;
+    }
+    if (!silent) { $("loading").classList.remove("hidden"); }
+    let res, body = null;
+    try {
+      res = await fetch(SYNC_URL, { method: "POST", headers: { "content-type": "application/json" },
+                                    body: JSON.stringify({ initData: tg.initData, action: "admin" }) });
+      try { body = await res.json(); } catch (e) { body = null; }
+    } catch (e) {
+      if (!state.data) showState("Нет связи", "Не удалось связаться с сервером. Проверьте интернет и откройте ещё раз.");
+      return;
+    }
+    if (res.status === 403) return showState("Нет доступа", "Этот аккаунт не админ учёта. Админы задаются в таблице tracker_admins.");
+    if (res.status === 401) return showState("Нет доступа", "Telegram не подтвердил вход. Откройте админку заново из бота.");
+    if (!res.ok || !body || !body.ok) {
+      if (!state.data) showState("Ошибка сервера", (body && (body.detail || body.error)) || "HTTP " + res.status);
+      return;
+    }
+    // id 0 is a technical test row (real Telegram ids are never 0)
+    body.users = body.users.filter((u) => String(u.user_id) !== "0");
+    body.deals = body.deals.filter((d) => String(d.user_id) !== "0");
+    state.data = body;
+    state.byId = Object.fromEntries(body.users.map((u) => [String(u.user_id), u]));
+    $("loading").classList.add("hidden"); $("error").classList.add("hidden"); $("main").classList.remove("hidden");
+    render();
+    $("updated").textContent = "Обновлено в " + new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+  }
+
+  // --- charts -------------------------------------------------------------------------------------------
+  function profitByDay(deals, target) {
+    const days = [];
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(today); d.setDate(d.getDate() - i);
+      const key = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      days.push({ key, day: d.getDate(), v: 0 });
+    }
+    const idx = Object.fromEntries(days.map((d, i) => [d.key, i]));
+    deals.forEach((d) => { if (d.status === "sold" && d.sell_date in idx) days[idx[d.sell_date]].v += d.profit || 0; });
+    const box = clear($(target));
+    const max = Math.max(1, ...days.map((d) => Math.abs(d.v)));
+    days.forEach((d, i) => {
+      const b = el("div", "bar");
+      if (d.v) b.appendChild(el("div", "t n", compact(d.v)));
+      const c = el("div", "c" + (d.v === 0 ? " z" : d.v < 0 ? " m" : ""));
+      c.style.height = Math.max(2, Math.round(Math.abs(d.v) / max * 80)) + "%";
+      b.appendChild(c);
+      b.appendChild(el("div", "day", i % 2 === 1 || i === 13 ? d.day : ""));
+      b.title = dmy(d.key) + ": " + signed(d.v);
+      box.appendChild(b);
+    });
+  }
+
+  // --- home ------------------------------------------------------------------------------------------------
+  function render() {
+    const D = state.data, T = D.totals;
+    const users = D.users;
+    const now = Date.now();
+    const within = (iso, h) => iso && now - new Date(iso).getTime() <= h * 3600e3;
+    const withDeals = users.filter((u) => u.deals > 0).length;
+    $("kProfit").textContent = signed(T.profit);
+    $("kProfit").className = "v n" + (T.profit < 0 ? " neg" : "");
+    $("kProfitD").textContent = "по " + plural(T.sold, "проданной сделке", "проданным сделкам", "проданным сделкам");
+    $("kUsers").textContent = users.length;
+    $("kUsersD").textContent = withDeals + " со сделками · +" + users.filter((u) => within(u.first_seen, 24 * 7)).length + " за 7 дн";
+    $("kActive").textContent = users.filter((u) => within(seen(u), 24)).length;
+    $("kActiveD").textContent = "за сутки · " + users.filter((u) => within(seen(u), 24 * 7)).length + " за 7 дн";
+    $("kDeals").textContent = fmt(T.deals);
+    $("kDealsD").textContent = T.sold + " продано · " + T.open + " в работе";
+    $("kRevenue").textContent = rub(T.revenue);
+    $("kRevenueD").textContent = "вложено в проданное " + rub(T.cost_sold);
+    $("kFrozen").textContent = rub(T.frozen);
+    const margin = T.cost_sold ? T.profit / T.cost_sold * 100 : 0;
+    $("kMargin").textContent = margin.toFixed(1).replace(".", ",") + "%";
+    $("kMarginD").textContent = "прибыль / затраты";
+    profitByDay(D.deals, "chart");
+    renderUsers(); renderDeals();
+    if (state.user) openUser(state.user, true);
+  }
+
+  function renderUsers() {
+    const q = state.uq.trim().toLowerCase().replace(/^@/, "");
+    const t = (iso) => iso ? new Date(iso).getTime() : 0;
+    const list = state.data.users.filter((u) => !q || [u.first_name, u.last_name, u.username, String(u.user_id)]
+      .some((v) => v && String(v).toLowerCase().includes(q)));
+    list.sort({ seen: (a, b) => t(seen(b)) - t(seen(a)), profit: (a, b) => b.profit - a.profit,
+                deals: (a, b) => b.deals - a.deals, new: (a, b) => t(b.first_seen) - t(a.first_seen) }[state.usort]);
+    const box = clear($("users"));
+    if (!list.length) box.appendChild(el("div", "empty", state.data.users.length ? "Никого не найдено." : "Пользователей пока нет."));
+    list.forEach((u) => {
+      const r = el("div", "row");
+      r.appendChild(ava(u, el("div", "ava")));
+      const m = el("div", "main");
+      const title = el("div", "t", who(u));
+      if (u.is_premium) title.appendChild(document.createTextNode(" ⭐️"));
+      m.appendChild(title);
+      const sub = [];
+      if (u.username) sub.push("@" + u.username);
+      sub.push(seen(u) ? ago(seen(u)) : "ещё не заходил после обновления");
+      m.appendChild(el("div", "s", sub.join(" · ")));
+      r.appendChild(m);
+      const side = el("div", "side");
+      side.appendChild(el("div", "big n " + (u.profit > 0 ? "pos" : u.profit < 0 ? "neg" : ""), signed(u.profit)));
+      side.appendChild(el("div", "small", plural(u.deals, "сделка", "сделки", "сделок") + (u.open ? " · " + u.open + " в работе" : "")));
+      r.appendChild(side);
+      r.addEventListener("click", () => { haptic(); openUser(String(u.user_id)); });
+      box.appendChild(r);
+    });
+  }
+
+  function dealRow(d, showUser) {
+    const r = el("div", "row deal");
+    r.style.cursor = showUser ? "pointer" : "default";
+    const m = el("div", "main");
+    const t = el("div", "t");
+    t.appendChild(el("span", "pill " + d.status, d.status === "sold" ? "продано" : "в работе"));
+    t.appendChild(document.createTextNode(" " + (d.name || "Без названия")));
+    m.appendChild(t);
+    const sub = [];
+    if (showUser) { const u = state.byId[d.user_id]; sub.push(u ? who(u) : "id " + d.user_id); }
+    if (d.category_name) sub.push(d.category_name);
+    sub.push(d.status === "sold" ? rub(d.cost) + " → " + rub(d.sell_price) : "куплено за " + rub(d.cost));
+    const dates = d.status === "sold" ? dmy(d.buy_date) + " – " + dmy(d.sell_date) : (d.buy_date ? "с " + dmy(d.buy_date) : "");
+    if (dates) sub.push(dates);
+    m.appendChild(el("div", "s", sub.join(" · ")));
+    if (d.note) m.appendChild(el("div", "s", "📝 " + d.note));
+    r.appendChild(m);
+    const side = el("div", "side");
+    if (d.status === "sold") {
+      side.appendChild(el("div", "big n " + (d.profit > 0 ? "pos" : d.profit < 0 ? "neg" : ""), signed(d.profit)));
+      if (d.cost) side.appendChild(el("div", "small n", (d.profit / d.cost * 100).toFixed(1).replace(".", ",") + "%"));
+    } else {
+      side.appendChild(el("div", "big n", rub(d.cost)));
+      if (d.expenses) side.appendChild(el("div", "small", "расходы " + rub(d.expenses)));
+    }
+    r.appendChild(side);
+    if (showUser) r.addEventListener("click", () => { haptic(); openUser(String(d.user_id)); });
+    return r;
+  }
+
+  function segment(target, deals, current, onPick) {
+    const box = clear($(target));
+    const c = { all: deals.length, progress: deals.filter((d) => d.status !== "sold").length, sold: deals.filter((d) => d.status === "sold").length };
+    [["all", "Все"], ["progress", "В работе"], ["sold", "Продано"]].forEach(([k, label]) => {
+      const b = el("button", "chip" + (current === k ? " on" : ""), label); b.type = "button";
+      b.appendChild(el("b", null, c[k]));
+      b.addEventListener("click", () => { haptic(); onPick(k); });
+      box.appendChild(b);
+    });
+  }
+
+  const LIMIT = 300;
+  function renderDeals() {
+    const q = state.dq.trim().toLowerCase().replace(/^@/, "");
+    const all = state.data.deals;
+    segment("dseg", all, state.dstatus, (k) => { state.dstatus = k; renderDeals(); });
+    const list = all.filter((d) => {
+      if (state.dstatus === "sold" ? d.status !== "sold" : state.dstatus === "progress" ? d.status === "sold" : false) return false;
+      if (!q) return true;
+      const u = state.byId[d.user_id] || {};
+      return [d.name, d.note, u.first_name, u.last_name, u.username].some((v) => v && String(v).toLowerCase().includes(q));
+    });
+    const box = clear($("deals"));
+    if (!list.length) box.appendChild(el("div", "empty", all.length ? "Ничего не найдено." : "Сделок пока нет."));
+    list.slice(0, LIMIT).forEach((d) => box.appendChild(dealRow(d, true)));
+    $("dmore").classList.toggle("hidden", list.length <= LIMIT);
+    $("dmore").textContent = "Показаны последние " + LIMIT + " из " + list.length + ". Уточните поиск.";
+  }
+
+  // --- one user -------------------------------------------------------------------------------------------
+  function openUser(uid, keepScroll) {
+    const u = state.byId[uid];
+    if (!u) { closeUser(); return; }
+    state.user = uid;
+    $("home").classList.add("hidden"); $("user").classList.remove("hidden");
+    ava(u, $("uAva"));
+    $("uName").textContent = who(u) + (u.is_premium ? " ⭐️" : "");
+    const meta = clear($("uMeta"));
+    if (u.username) {
+      const a = el("a", "link", "@" + u.username);
+      a.href = "https://t.me/" + encodeURIComponent(u.username);
+      a.addEventListener("click", (e) => { if (tg && tg.openTelegramLink) { e.preventDefault(); tg.openTelegramLink(a.href); } });
+      meta.appendChild(a); meta.appendChild(document.createTextNode(" · "));
+    }
+    meta.appendChild(document.createTextNode("id " + u.user_id));
+    const lines = [];
+    if (u.first_seen) lines.push("с нами с " + new Date(u.first_seen).toLocaleDateString("ru-RU"));
+    if (seen(u)) lines.push("заходил " + ago(seen(u)));
+    if (u.opens) lines.push("открывал " + plural(u.opens, "раз", "раза", "раз"));
+    if (lines.length) meta.appendChild(el("div", null, lines.join(" · ")));
+
+    const deals = state.data.deals.filter((d) => String(d.user_id) === uid);
+    const k = clear($("uKpis"));
+    const tile = (label, v, d, cls) => { const t = el("div", "kpi" + (cls ? " " + cls : "")); t.appendChild(el("div", "k", label));
+      t.appendChild(el("div", "v n", v)); if (d) t.appendChild(el("div", "d", d)); k.appendChild(t); };
+    tile("Прибыль", signed(u.profit), "по " + u.sold + " продажам", "hero");
+    tile("Сделок", u.deals, u.sold + " продано · " + u.open + " в работе");
+    tile("Заморожено", rub(u.frozen), "в непроданном");
+    tile("Оборот", rub(u.revenue), "сумма продаж");
+    tile("Маржа", (u.cost_sold ? (u.profit / u.cost_sold * 100).toFixed(1).replace(".", ",") : "0") + "%", "прибыль / затраты");
+    profitByDay(deals, "uChart");
+    const draw = () => {
+      segment("useg", deals, state.ustatus, (s) => { state.ustatus = s; draw(); });
+      const list = deals.filter((d) => state.ustatus === "all" || (state.ustatus === "sold") === (d.status === "sold"));
+      const box = clear($("uDeals"));
+      if (!list.length) box.appendChild(el("div", "empty", "Сделок нет."));
+      list.forEach((d) => box.appendChild(dealRow(d, false)));
+    };
+    draw();
+    if (!keepScroll) window.scrollTo(0, 0);
+    if (tg && tg.BackButton) { try { tg.BackButton.show(); } catch (e) { /* ignore */ } }
+  }
+  function closeUser() {
+    state.user = null; state.ustatus = "all";
+    $("user").classList.add("hidden"); $("home").classList.remove("hidden");
+    if (tg && tg.BackButton) { try { tg.BackButton.hide(); } catch (e) { /* ignore */ } }
+  }
+
+  // --- events ---------------------------------------------------------------------------------------------
+  document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => {
+    haptic(); state.tab = b.dataset.tab;
+    document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("on", x === b));
+    $("pane-users").classList.toggle("hidden", state.tab !== "users");
+    $("pane-deals").classList.toggle("hidden", state.tab !== "deals");
+  }));
+  $("uq").addEventListener("input", (e) => { state.uq = e.target.value; renderUsers(); });
+  $("usort").addEventListener("change", (e) => { state.usort = e.target.value; renderUsers(); });
+  $("dq").addEventListener("input", (e) => { state.dq = e.target.value; renderDeals(); });
+  $("back").addEventListener("click", closeUser);
+  $("refresh").addEventListener("click", () => { haptic(); load(true); });
+  if (tg && tg.BackButton && tg.BackButton.onClick) tg.BackButton.onClick(closeUser);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && state.data) load(true); });
+
+  load(false);
+})();
+</script>
+</body>
+</html>
